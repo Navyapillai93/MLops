@@ -1,54 +1,22 @@
+# train_local_model.py
 import pandas as pd
-import mlflow
-import mlflow.sklearn
-
-from sklearn.model_selection import train_test_split
 from sklearn.tree import DecisionTreeClassifier
-from sklearn.metrics import accuracy_score
+import joblib
 
-# Load Dataset
-data = pd.read_csv("billing_data.csv")
+# Tiny dataset
+df = pd.DataFrame({
+    "MonthlyDataUsage":[10,6,15,8],
+    "AverageCallCount":[120,90,160,110],
+    "MonthlyBill":[800,450,1200,650],
+    "UsageBillingRatio":[0.012,0.013,0.012,0.012],
+    "BillingStatus":[0,0,1,0]
+})
 
-# Features and Target
-X = data[["Usage_GB", "Bill_Amount", "Expected_Bill"]]
-y = data["Leakage"]
+X = df[["MonthlyDataUsage","AverageCallCount","MonthlyBill","UsageBillingRatio"]]
+y = df["BillingStatus"]
 
-# Split Dataset (70% Training, 30% Testing)
-X_train, X_test, y_train, y_test = train_test_split(
-    X,
-    y,
-    test_size=0.30,
-    random_state=42
-)
+model = DecisionTreeClassifier(random_state=42)
+model.fit(X, y)
 
-# Start MLflow Experiment
-mlflow.set_experiment("Vodafone Billing AI")
-
-with mlflow.start_run():
-
-    # Create Model
-    model = DecisionTreeClassifier(max_depth=3)
-
-    # Train Model
-    model.fit(X_train, y_train)
-
-    # Prediction
-    predictions = model.predict(X_test)
-
-    # Accuracy
-    accuracy = accuracy_score(y_test, predictions)
-
-    # Log Parameters
-    mlflow.log_param("Algorithm", "Decision Tree")
-    mlflow.log_param("Max Depth", 3)
-
-    # Log Metric
-    mlflow.log_metric("Accuracy", accuracy)
-
-    # Save Model
-    mlflow.sklearn.log_model(model, "billing_model")
-
-    print("--------------------------------")
-    print("Training Completed")
-    print("Accuracy :", round(accuracy * 100, 2), "%")
-    print("--------------------------------")
+joblib.dump(model, "local_model.pkl")
+print("Model saved as local_model.pkl")
